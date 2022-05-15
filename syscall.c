@@ -176,17 +176,6 @@ int sysread(int filedes, void *buffer, unsigned length)
     return length;
   }
   
-  if (filedes == 0)
-  {
-    unsigned i = 0;
-    uint8_t *local_buf = (uint8_t *) buffer;
-    for (;i < length; i++)
-    {
-      local_buf[i] = input_getc();
-    }
-    return length;
-  }
-  
   struct file *file_ptr = get_file(filedes);
   if (!file_ptr)
   {
@@ -196,16 +185,16 @@ int sysread(int filedes, void *buffer, unsigned length)
   return bytes_read;
 }
 
-int syswrite (int filedes, const void * buffer, unsigned byte_size)
+int syswrite (int filedes, const void * buffer, unsigned length)
 {
-  if (byte_size <= 0)
+  if (length <= 0)
   {
-    return byte_size;
+    return length;
   }
   if (filedes == 1)
   {
-    putbuf (buffer, byte_size);
-    return byte_size;
+    putbuf (buffer, length);
+    return length;
   }
 
   struct file *file_ptr = get_file(filedes);
@@ -213,8 +202,8 @@ int syswrite (int filedes, const void * buffer, unsigned byte_size)
   {
     return -1;
   }
-  int bytes_written = file_write(file_ptr, buffer, byte_size);
-  return bytes_written;
+  int bytes_write = file_write(file_ptr, buffer, length);
+  return bytes_write;
 }
 
 void sysseek (int filedes, unsigned new_position)
@@ -240,7 +229,25 @@ unsigned systell(int filedes)
 
 void sysclose(int filedes)
 {
-  process_close_file(filedes);
+  struct thread *t = thread_current();
+  struct list_elem *next;
+  struct list_elem *e = list_begin(&t->file_list);
+  
+  for (;e != list_end(&t->file_list); e = next)
+  {
+    next = list_next(e);
+    struct process_file *process_file_ptr = list_entry (e, struct process_file, elem);
+    if (filedes == process_file_ptr->fd || filedes == -1)
+    {
+      file_close(process_file_ptr->file);
+      list_remove(&process_file_ptr->elem);
+      free(process_file_ptr);
+      if (filedes != -1)
+      {
+        return;
+      }
+    }
+  }
 }
 
 int getpage_ptr(const void *vaddr)
@@ -287,27 +294,4 @@ struct file* get_file (int filedes)
     }
   }
   return NULL;
-}
-
-void process_close_file (int file_descriptor)
-{
-  struct thread *t = thread_current();
-  struct list_elem *next;
-  struct list_elem *e = list_begin(&t->file_list);
-  
-  for (;e != list_end(&t->file_list); e = next)
-  {
-    next = list_next(e);
-    struct process_file *process_file_ptr = list_entry (e, struct process_file, elem);
-    if (file_descriptor == process_file_ptr->fd || file_descriptor == -1)
-    {
-      file_close(process_file_ptr->file);
-      list_remove(&process_file_ptr->elem);
-      free(process_file_ptr);
-      if (file_descriptor != -1)
-      {
-        return;
-      }
-    }
-  }
 }

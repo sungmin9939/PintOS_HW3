@@ -136,7 +136,7 @@ process_exit (void)
   struct list_elem *e = list_begin(&cur->child_list);
   uint32_t *pd;
   
-  process_close_file(-1);
+  sysclose(-1);
   if (cur->executable)
   {
     file_close(cur->executable);

@@ -25,6 +25,5 @@ struct process_file {
 int getpage_ptr (const void *vaddr);
 struct child_process* find_child_process (int pid);
 struct file* get_file(int filedes);
-void process_close_file (int file_descriptor);
 
 #endif /* userprog/syscall.h */

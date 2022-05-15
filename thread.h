@@ -110,7 +110,6 @@ struct thread
     
     struct child_process* cp;
     struct file* executable;
-    struct list lock_list;
   };
 
 /* If false (default), use round-robin scheduler.
